@@ -1,5 +1,7 @@
 - hosts: localhost
   become: true
+  vars:
+    - chrome_apt_file: /etc/apt/sources.list.d/google-chrome.list
   tasks:
   - name: Fish PPA version 3
     apt_repository:
@@ -112,3 +114,29 @@
   - name: termite | set termite as default terminal
     command: update-alternatives --install /usr/bin/x-terminal-emulator x-terminal-emulator /usr/local/bin/termite 60
     tags: termite
+
+  - name: google chrome | Does the Google apt file exist?
+    command: test -f {{chrome_apt_file}}
+    register: google_apt_exists
+    ignore_errors: True
+    tags: chrome
+
+  - name: google chrome | Add Google Chrome key
+    shell: wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+    when: google_apt_exists.rc == 1
+    tags: chrome
+
+  - name: google chrome | Add Google Chrome repo
+    copy: content="deb http://dl.google.com/linux/chrome/deb/ stable main" dest={{chrome_apt_file}} owner=root group=root mode=644
+    when: google_apt_exists.rc == 1
+    tags: chrome
+
+  - name: google chrome | Update apt cache
+    apt: update_cache=yes
+    when: google_apt_exists.rc == 1
+    tags: chrome
+
+  - name: google chrome | Install Google Chrome
+    apt: pkg=google-chrome-stable state=installed
+    tags: chrome
+
