@@ -1,11 +1,21 @@
 - hosts: localhost
   become: true
   tasks:
+  - name: Fish PPA version 3
+     apt_repository:
+       validate_certs: no
+       repo: 'ppa:fish-shell/release-3'
+       state: present
   - name: Install packages
-    apt: name={{item}}
-    with_items:
-      - htop
-      - mc
-      - tmux
-      - xclip
+    apt: 
+      name: "{{packages}}"
+      state: present
+      update_cache: yes
+    vars:  
+      packages:
+        - fish
+        - htop
+        - mc
+        - tmux
+        - xclip
   
