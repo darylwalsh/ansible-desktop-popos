@@ -22,20 +22,24 @@
         - tmux
         - xclip
 
-  - name: Clone termite git repository
+  - name: termite | Clone termite git repository
     git:
       clone: true
       dest: "/home/{{ ansible_user }}/termite"
       force: true
       recursive: true
       repo: https://github.com/thestinger/termite.git
-  - name: Clone vte-ng git repository
+    tags: termite
+
+  - name: termite | Clone vte-ng git repository
     git:
       clone: true
       dest: "/home/{{ ansible_user }}/vte-ng"
       force: true
       repo: https://github.com/thestinger/vte-ng.git
-  - name: Install packages necessary to compile termite
+    tags: termite
+
+  - name: termite | Install packages necessary to compile termite
     apt:
       name: "{{packages}}"
       state: present
@@ -53,4 +57,58 @@
         - libgirepository1.0-dev
         - libxml2-utils
         - gperf
+    tags: termite
+        
+  - name: termite | Execute autogen.sh for vte-ng
+    shell: "./autogen.sh"
+    args:
+      chdir: "/home/{{ ansible_user }}/vte-ng/"
+    environment:
+      LIBRARY_PATH: "/usr/include/gtk-3.0:$LIBRARY_PATH"
+    tags: termite
+      
+  - name: termite | Make vte-ng
+    make:
+      chdir: "/home/{{ ansible_user }}/vte-ng/"
+    tags: termite
 
+  - name: termite | Make install vte-ng
+    make:
+      chdir: "/home/{{ ansible_user }}/vte-ng/"
+      target: install
+    tags: termite
+
+  - name: termite | Make termite
+    make:
+      chdir: "/home/{{ ansible_user }}/termite/"
+    tags: termite
+
+  - name: termite | Make install termite
+    make:
+      chdir: "/home/{{ ansible_user }}/termite/"
+      target: install
+    tags: termite
+      
+  - name: termite | execute ldconfig
+    command: ldconfig
+    tags: termite
+
+  - name: termite | Creating termite directories
+    file:
+      group: root
+      owner: root
+      mode: 0644
+      dest: "/lib/terminfo/x"
+      state: directory
+    tags: termite
+
+  - name: termite | Creating soft link
+    file:
+      src: "/usr/local/share/terminfo/x/xterm-termite"
+      dest: "/lib/terminfo/x/xterm-termite"
+      state: link
+    tags: termite
+      
+  - name: termite | set termite as default terminal
+    command: update-alternatives --install /usr/bin/x-terminal-emulator x-terminal-emulator /usr/local/bin/termite 60
+    tags: termite
